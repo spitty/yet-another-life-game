@@ -3,8 +3,14 @@ version '1.0-SNAPSHOT'
 
 buildscript {
     ext.kotlin_version = '1.2.10'
+    ext.html_version = '0.6.8'
+    ext.coroutines_version = '0.21'
     repositories {
         mavenCentral()
+        jcenter()
+        // maven { url "http://kotlin.bintray.com/kotlinx" }
+        // maven { url "http://kotlin.bintray.com/kotlin-dev" }
+
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
@@ -14,11 +20,14 @@ buildscript {
 apply plugin: 'kotlin2js'
 
 repositories {
-    mavenCentral()
+    // mavenCentral()
+    jcenter()
 }
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+    compile "org.jetbrains.kotlinx:kotlinx-html-js:$html_version"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
 }
 
 task assembleWeb(type: Sync) {
@@ -33,7 +42,17 @@ task assembleWeb(type: Sync) {
         })
     }
     from compileKotlin2Js.destinationDir
-    into "${projectDir}/web"
+    into "${projectDir}/web/js/lib"
 
     dependsOn classes
+}
+
+assemble.dependsOn assembleWeb
+
+compileKotlin2Js {
+    kotlinOptions {
+        outputFile = "${projectDir}/web/js/consoleOutput.js"
+        sourceMap = true
+        sourceMapEmbedSources = "always"
+    }
 }
