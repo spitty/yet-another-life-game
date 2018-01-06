@@ -20,7 +20,6 @@ buildscript {
 apply plugin: 'kotlin2js'
 
 repositories {
-    // mavenCentral()
     jcenter()
 }
 
@@ -30,6 +29,12 @@ dependencies {
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
 }
 
+task copyWebFiles(type: Copy) {
+    from 'src/main/web'
+    into 'web'
+}
+
+// Taken from tutorial for Kotlin http://kotlinlang.org/docs/tutorials/javascript/getting-started-gradle/getting-started-with-gradle.html
 task assembleWeb(type: Sync) {
     configurations.compile.each { File file ->
         from(zipTree(file.absolutePath), {
@@ -48,6 +53,7 @@ task assembleWeb(type: Sync) {
 }
 
 assemble.dependsOn assembleWeb
+assemble.dependsOn copyWebFiles
 
 compileKotlin2Js {
     kotlinOptions {
@@ -56,3 +62,10 @@ compileKotlin2Js {
         sourceMapEmbedSources = "always"
     }
 }
+
+task cleanWeb(type: Delete) {
+  delete 'web'
+  followSymlinks = true
+}
+
+clean.dependsOn cleanWeb
