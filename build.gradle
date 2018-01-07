@@ -18,6 +18,7 @@ buildscript {
 }
 
 apply plugin: 'kotlin2js'
+kotlin.experimental.coroutines "enable"
 
 repositories {
     jcenter()
