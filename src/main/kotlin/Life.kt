@@ -52,8 +52,8 @@ class Application {
     private val sw = cellSize * gridHSize
     private val sh = cellSize * gridVSize
 
-    private var mouseX = 0.0
-    private var mouseY = 0.0
+    private var mouseX = margin
+    private var mouseY = margin
     private var field = Array(gridVSize, { _ -> IntArray(gridHSize, { _ -> 0 }) })
 
     fun start() {

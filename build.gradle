@@ -57,7 +57,7 @@ assemble.dependsOn copyWebFiles
 
 compileKotlin2Js {
     kotlinOptions {
-        outputFile = "${projectDir}/web/js/consoleOutput.js"
+        outputFile = "${projectDir}/web/js/life.js"
         sourceMap = true
         sourceMapEmbedSources = "always"
     }
