@@ -1,3 +1,6 @@
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.awaitAnimationFrame
+import kotlinx.coroutines.experimental.launch
 import kotlinx.html.button
 import kotlinx.html.div
 import kotlinx.html.dom.append
@@ -6,10 +9,12 @@ import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onMouseDownFunction
 import kotlinx.html.js.onMouseMoveFunction
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 import kotlin.browser.document
+import kotlin.browser.window
 import kotlin.dom.clear
 import kotlin.math.floor
 import kotlin.math.round
@@ -43,9 +48,14 @@ private fun HTMLElement.setPosition(x: Double, y: Double) {
 class Application {
     private val body get() = document.body!!
     private val scene get() = document.getElementById("scene") as HTMLElement
+    private val startButton get() = document.getElementById("startButton") as HTMLButtonElement
+    private val stopButton get() = document.getElementById("stopButton") as HTMLButtonElement
+    private val speedometer get() = document.getElementById("speedometer") as HTMLElement
 
-    private val gridHSize = 30
     private val gridVSize = 20
+    private val gridHSize = 30
+    private val vRange = 0..(gridVSize - 1)
+    private val hRange = 0..(gridHSize - 1)
     private val cellSize = 30.0
     private val margin = cellSize / 2
 
@@ -56,6 +66,10 @@ class Application {
     private var mouseY = margin
     private var field = Array(gridVSize, { _ -> IntArray(gridHSize, { _ -> 0 }) })
 
+    private val topSpeed = 10
+    private var speed = 0
+    private var animation: Job? = null
+
     fun start() {
         body.append.div("content") {
             h1 {
@@ -63,8 +77,27 @@ class Application {
             }
             div {
                 button {
-                    +"Say 'Hi!'"
-                    onClickFunction = { sayHi() }
+                    +"Start"
+                    id = "startButton"
+                    onClickFunction = { startLife() }
+                }
+                button {
+                    +"Stop"
+                    id = "stopButton"
+                    onClickFunction = { stopLife() }
+                }
+            }
+            div {
+                button {
+                    +"Speed up"
+                    onClickFunction = { speedUp() }
+                }
+                button {
+                    +"Speed down"
+                    onClickFunction = { speedDown() }
+                }
+                div {
+                    id = "speedometer"
                 }
             }
             div {
@@ -74,7 +107,100 @@ class Application {
             }
         }
         scene.setSize(sw, sh)
+        stopButton.disabled = true
         redraw()
+    }
+
+    private fun speedUp() {
+        if (speed in 0..(topSpeed - 1)) {
+            speed++
+        }
+    }
+
+    private fun speedDown() {
+        if (speed > 1) {
+            speed--
+        }
+    }
+
+    private fun startLife() {
+        if (speed != 0) {
+            return
+        }
+        println("startLife")
+        speed = 1
+        startButton.disabled = true
+        stopButton.disabled = false
+        animation = launch {
+            val timer = AnimationTimer()
+            while (true) {
+                val dt = timer.await(1000.0 / speed)
+                println("Spent ${dt}ms")
+                calcNextState()
+                redraw()
+            }
+        }
+    }
+
+    private fun stopLife() {
+        if (speed == 0) {
+            return
+        }
+        println("stopLife")
+        speed = 0
+        startButton.disabled = false
+        stopButton.disabled = true
+        if (animation != null) {
+            animation!!.cancel()
+        }
+    }
+
+    private fun calcNextState() {
+        val newField = Array(gridVSize, { _ -> IntArray(gridHSize, { _ -> 0 }) })
+        for (y in vRange) {
+            for (x in hRange) {
+                val cur = IntPoint(x, y)
+                val neighbors = calcNeighbors(cur)
+                val state = currentState(cur)
+                val newState =
+                        if (state == 0 && neighbors == 3) {
+                            1
+                        } else if (state == 1 && neighbors in 2..3) {
+                            1
+                        } else {
+                            0
+                        }
+                newField[y][x] = newState
+            }
+        }
+
+        field = newField
+//        for (i in vRange) {
+//            for (j in hRange) {
+//                field[i][j] = newField[i][j]
+//            }
+//        }
+    }
+
+    private fun currentState(p: IntPoint): Int {
+        return field[p.y][p.x]
+    }
+
+    private fun calcNeighbors(p: IntPoint): Int {
+        val localXRange = (p.x - 1)..(p.x + 1)
+        val localYRange = (p.y - 1)..(p.y + 1)
+        var count = 0
+        for (x in localXRange) {
+            for (y in localYRange) {
+                if (x !in hRange || y !in vRange || (x == p.x && y == p.y)) {
+                    continue
+                }
+                if (field[y][x] != 0) {
+                    count++
+                }
+            }
+        }
+        return count
     }
 
     private fun onClick(event: Event) {
@@ -91,6 +217,7 @@ class Application {
     }
 
     private fun redraw() {
+        speedometer.innerText = "$speed"
         scene.clear()
         // draw field
         for (i in field.indices) {
@@ -154,4 +281,30 @@ fun Point.floorTo(cellSize: Double): IntPoint {
     val newX = floor(x / cellSize).toInt()
     val newY = floor(y / cellSize).toInt()
     return IntPoint(newX, newY)
+}
+
+class AnimationTimer {
+    var time = window.performance.now()
+
+    suspend fun await(): Double {
+        val newTime = window.awaitAnimationFrame()
+        val dt = newTime - time
+        time = newTime
+        return dt
+    }
+
+    suspend fun await(interval: Double): Double {
+        var newTime = window.awaitAnimationFrame()
+        while (newTime - time < interval) {
+            newTime = window.awaitAnimationFrame()
+        }
+        val dt = newTime - time
+        time = newTime
+        return dt
+    }
+
+    fun reset(): Double {
+        time = window.performance.now()
+        return time
+    }
 }
