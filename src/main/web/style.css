@@ -1,0 +1,21 @@
+#scene {
+    border: #000000 1px solid;
+    position: relative;
+}
+
+.aim {
+    position: absolute;
+    background: none;
+    border: black 1px dashed;
+}
+
+.rect {
+    position: absolute;
+    background: red;
+}
+
+.circle {
+    position: absolute;
+    background: #ffa450;
+    border-radius: 50%;
+}
