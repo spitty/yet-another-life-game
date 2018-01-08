@@ -45,6 +45,10 @@ private fun HTMLElement.setPosition(x: Double, y: Double) {
     }
 }
 
+enum class PlayState {
+    PLAY, PAUSE
+}
+
 class Application {
     private val body get() = document.body!!
     private val scene get() = document.getElementById("scene") as HTMLElement
@@ -69,6 +73,7 @@ class Application {
     private val topSpeed = 10
     private var speed = 0
     private var animation: Job? = null
+    private var playState: PlayState = PlayState.PAUSE
 
     fun start() {
         body.append.div("content") {
@@ -88,16 +93,17 @@ class Application {
                 }
             }
             div {
-                button {
-                    +"Speed up"
-                    onClickFunction = { speedUp() }
-                }
-                button {
-                    +"Speed down"
-                    onClickFunction = { speedDown() }
-                }
+                +"Speed:"
                 div {
                     id = "speedometer"
+                }
+                button {
+                    +"-"
+                    onClickFunction = { speedDown() }
+                }
+                button {
+                    +"+"
+                    onClickFunction = { speedUp() }
                 }
             }
             div {
@@ -108,29 +114,34 @@ class Application {
         }
         scene.setSize(sw, sh)
         stopButton.disabled = true
+        updateSpeed(5)
         redraw()
     }
 
-    private fun speedUp() {
-        if (speed in 0..(topSpeed - 1)) {
-            speed++
+    private fun updateSpeed(newSpeed: Int) {
+        if (newSpeed !in (0..topSpeed)) {
+            return
         }
+        speed = newSpeed
+        speedometer.innerText = "$speed"
+    }
+
+    private fun speedUp() {
+        updateSpeed(speed + 1)
     }
 
     private fun speedDown() {
-        if (speed > 1) {
-            speed--
+        if (speed <= 1) {
+            return
         }
+        updateSpeed(speed - 1)
     }
 
     private fun startLife() {
-        if (speed != 0) {
+        if (!trySetPlayState(PlayState.PLAY)) {
             return
         }
         println("startLife")
-        speed = 1
-        startButton.disabled = true
-        stopButton.disabled = false
         animation = launch {
             val timer = AnimationTimer()
             while (true) {
@@ -143,16 +154,32 @@ class Application {
     }
 
     private fun stopLife() {
-        if (speed == 0) {
+        if (!trySetPlayState(PlayState.PAUSE)) {
             return
         }
         println("stopLife")
-        speed = 0
-        startButton.disabled = false
-        stopButton.disabled = true
         if (animation != null) {
+            // double check for null
             animation!!.cancel()
         }
+    }
+
+    /**
+     * Change playState, update 'start'/'stop' buttons states, and return 'true' if state can be changed.
+     * Returns 'false' if nothing happened.
+     */
+    private fun trySetPlayState(state: PlayState): Boolean {
+        if (playState == state) {
+            return false
+        }
+        playState = state
+        updateButtonStates()
+        return true
+    }
+
+    private fun updateButtonStates() {
+        startButton.disabled = playState == PlayState.PLAY
+        stopButton.disabled = playState == PlayState.PAUSE
     }
 
     private fun calcNextState() {
@@ -175,11 +202,6 @@ class Application {
         }
 
         field = newField
-//        for (i in vRange) {
-//            for (j in hRange) {
-//                field[i][j] = newField[i][j]
-//            }
-//        }
     }
 
     private fun currentState(p: IntPoint): Int {
@@ -217,7 +239,6 @@ class Application {
     }
 
     private fun redraw() {
-        speedometer.innerText = "$speed"
         scene.clear()
         // draw field
         for (i in field.indices) {
@@ -239,10 +260,6 @@ class Application {
         aim.setPosition(newX, newY)
     }
 
-    private fun sayHi() {
-        println("Hi!")
-    }
-
     private fun updateCoords(event: Event) {
         if (event !is MouseEvent) {
             return
@@ -255,6 +272,9 @@ class Application {
         redraw()
     }
 
+    /**
+     * Translate MouseEvent coordinates to coordinates related to 'scene'
+     */
     private fun eventToCoords(event: MouseEvent): Point {
         val xRange = (0.0 + margin)..(sw - margin)
         val yRange = (0.0 + margin)..(sh - margin)

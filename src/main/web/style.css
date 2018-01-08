@@ -3,6 +3,43 @@
     position: relative;
 }
 
+#speedometer {
+    display: inline-block;
+    border: black 1px solid;
+    padding: 2px;
+    font-family: 'DejaVu Sans Mono', 'Courier New', monospace;
+    font-weight: bold;
+    text-align: center;
+    width: 20px;
+    height: 20px;
+}
+
+button {
+    border: 1px solid #0066cc;
+    background-color: #0099cc;
+    font-family: 'DejaVu Sans Mono', 'Courier New', monospace;
+    color: #ffffff;
+    padding: 5px 10px;
+}
+
+button:hover {
+    border: 1px solid #0099cc;
+    background-color: #00aacc;
+    color: #ffffff;
+    padding: 5px 10px;
+}
+
+button:disabled,
+button[disabled] {
+    border: 1px solid #999999;
+    background-color: #cccccc;
+    color: #666666;
+}
+
+div {
+    font-family: 'DejaVu Sans Mono', 'Courier New', monospace;
+}
+
 .aim {
     position: absolute;
     background: none;
