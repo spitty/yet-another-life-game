@@ -1,5 +1,7 @@
 # Yet Another Game of Life
 
+[Living demo](http://life.spitty.ru/).
+
 This repository contains implementation of [Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
 
 The aim was to create Kotlin application compiled to JavaScript.
