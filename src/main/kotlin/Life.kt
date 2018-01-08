@@ -78,7 +78,7 @@ class Application {
     fun start() {
         body.append.div("content") {
             h1 {
-                +"Kotlin JS Example"
+                +"Yet Another Life Game (Kotlin JS Example)"
             }
             div {
                 button {
