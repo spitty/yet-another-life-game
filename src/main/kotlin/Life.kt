@@ -1,14 +1,9 @@
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.awaitAnimationFrame
 import kotlinx.coroutines.experimental.launch
-import kotlinx.html.button
-import kotlinx.html.div
+import kotlinx.html.*
 import kotlinx.html.dom.append
-import kotlinx.html.h1
-import kotlinx.html.id
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.js.onMouseDownFunction
-import kotlinx.html.js.onMouseMoveFunction
+import kotlinx.html.js.*
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
@@ -30,6 +25,7 @@ fun main(args: Array<String>) {
 }
 
 val Double.px get() = "${this}px"
+val Int.switch get() = 1 - this
 
 private fun HTMLElement.setSize(w: Double, h: Double) {
     with(style) {
@@ -74,6 +70,12 @@ class Application {
     private var animation: Job? = null
     private var playState: PlayState = PlayState.PAUSE
 
+    enum class DragState {
+        OFF, FILL, CLEAR
+    }
+
+    private var dragState = DragState.OFF
+
     fun start() {
         body.append.div("content") {
             h1 {
@@ -107,8 +109,11 @@ class Application {
             }
             div {
                 id = "scene"
-                onMouseMoveFunction = { event: Event -> updateCoords(event) }
-                onMouseDownFunction = { event -> onClick(event) }
+                onMouseMoveFunction = { event -> updateCoords(event) }
+                onMouseDownFunction = { event -> startDrag(event) }
+                // todo: currently "mouseOut" occurs on moving to div "aim"
+//                onMouseOutFunction = { event -> stopDrag(event) }
+                onMouseUpFunction = { event -> stopDrag(event) }
             }
         }
         scene.setSize(sw, sh)
@@ -244,17 +249,51 @@ class Application {
         return count
     }
 
-    private fun onClick(event: Event) {
+    private fun switchCellState(event: Event) {
         if (event !is MouseEvent) {
             return
         }
         val mousePoint = eventToCoords(event)
-        val (x, y) = mousePoint
-        println("Mouse clicked ($x, $y)")
-        val (intX, intY) = mousePoint.floorTo(cellSize)
-        println("Mouse clicked ($intX, $intY)")
-        field[intY][intX] = 1 - field[intY][intX]
+        switchStateOf(mousePoint)
         redraw()
+    }
+
+    private fun getStateOf(point: Point): Int {
+        val (intX, intY) = point.floorTo(cellSize)
+        return field[intY][intX]
+    }
+
+    private fun setStateOf(point: Point, newState: Int) {
+        val (intX, intY) = point.floorTo(cellSize)
+        field[intY][intX] = newState
+    }
+
+    private fun switchStateOf(point: Point) {
+        val newState = getStateOf(point).switch
+        setStateOf(point, newState)
+    }
+
+    private fun startDrag(event: Event) {
+        if (event !is MouseEvent || dragState != DragState.OFF) {
+            return
+        }
+        val point = eventToCoords(event)
+        val filler = getStateOf(point).switch
+        dragState = if (filler == 1) {
+            DragState.FILL
+        } else {
+            DragState.CLEAR
+        }
+        println("startDrag($dragState)")
+        switchCellState(event)
+    }
+
+    private fun stopDrag(event: Event) {
+        if (event !is MouseEvent || dragState == DragState.OFF) {
+            return
+        }
+        println("stopDrag($event)")
+        dragState = DragState.OFF
     }
 
     private fun redraw() {
@@ -285,10 +324,24 @@ class Application {
         }
         println("Hi, (${event.pageX}, ${event.pageY})")
 
-        val (newX, newY) = eventToCoords(event)
+        val point = eventToCoords(event)
+        setMouseCoords(point)
+        val newStateOfCell =
+                when (dragState) {
+                    DragState.CLEAR -> 0
+                    DragState.FILL -> 1
+                    else -> null
+                }
+        if (newStateOfCell != null) {
+            setStateOf(point, newStateOfCell)
+        }
+        redraw()
+    }
+
+    private fun setMouseCoords(point: Point) {
+        val (newX, newY) = point
         mouseX = newX
         mouseY = newY
-        redraw()
     }
 
     /**
