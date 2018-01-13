@@ -36,6 +36,11 @@ button[disabled] {
     color: #666666;
 }
 
+button#startStopButton {
+    width: 60px;
+    text-align: center;
+}
+
 div {
     font-family: 'DejaVu Sans Mono', 'Courier New', monospace;
 }

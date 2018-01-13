@@ -52,8 +52,7 @@ enum class PlayState {
 class Application {
     private val body get() = document.body!!
     private val scene get() = document.getElementById("scene") as HTMLElement
-    private val startButton get() = document.getElementById("startButton") as HTMLButtonElement
-    private val stopButton get() = document.getElementById("stopButton") as HTMLButtonElement
+    private val startStopButton get() = document.getElementById("startStopButton") as HTMLButtonElement
     private val speedometer get() = document.getElementById("speedometer") as HTMLElement
 
     private val gridVSize = 40
@@ -83,13 +82,8 @@ class Application {
             div {
                 button {
                     +"Start"
-                    id = "startButton"
-                    onClickFunction = { startLife() }
-                }
-                button {
-                    +"Stop"
-                    id = "stopButton"
-                    onClickFunction = { stopLife() }
+                    id = "startStopButton"
+                    onClickFunction = { startStopLife() }
                 }
             }
             div {
@@ -113,7 +107,6 @@ class Application {
             }
         }
         scene.setSize(sw, sh)
-        stopButton.disabled = true
         updateSpeed(5)
         redraw()
     }
@@ -135,6 +128,14 @@ class Application {
             return
         }
         updateSpeed(speed - 1)
+    }
+
+    private fun startStopLife() {
+        if (playState != PlayState.PLAY) {
+            startLife()
+        } else {
+            stopLife()
+        }
     }
 
     private fun startLife() {
@@ -178,8 +179,10 @@ class Application {
     }
 
     private fun updateButtonStates() {
-        startButton.disabled = playState == PlayState.PLAY
-        stopButton.disabled = playState == PlayState.PAUSE
+        when (playState) {
+            PlayState.PAUSE -> startStopButton.textContent = "Start"
+            PlayState.PLAY -> startStopButton.textContent = "Stop"
+        }
     }
 
     private fun calcNextState() {
