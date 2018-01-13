@@ -85,6 +85,11 @@ class Application {
                     id = "startStopButton"
                     onClickFunction = { startStopLife() }
                 }
+                button {
+                    +"Clear"
+                    id = "clearButton"
+                    onClickFunction = { clear() }
+                }
             }
             div {
                 +"Speed:"
@@ -183,6 +188,17 @@ class Application {
             PlayState.PAUSE -> startStopButton.textContent = "Start"
             PlayState.PLAY -> startStopButton.textContent = "Stop"
         }
+    }
+
+    private fun clear() {
+        for (i in field.indices) {
+            for (j in field[i].indices) {
+                field[i][j] = 0
+            }
+        }
+        redraw()
+        // nothing to do with empty field
+        stopLife()
     }
 
     private fun calcNextState() {
