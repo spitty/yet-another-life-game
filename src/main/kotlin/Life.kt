@@ -56,11 +56,11 @@ class Application {
     private val stopButton get() = document.getElementById("stopButton") as HTMLButtonElement
     private val speedometer get() = document.getElementById("speedometer") as HTMLElement
 
-    private val gridVSize = 20
-    private val gridHSize = 30
+    private val gridVSize = 40
+    private val gridHSize = 40
     private val vRange = 0..(gridVSize - 1)
     private val hRange = 0..(gridHSize - 1)
-    private val cellSize = 30.0
+    private val cellSize = 15.0
     private val margin = cellSize / 2
 
     private val sw = cellSize * gridHSize
