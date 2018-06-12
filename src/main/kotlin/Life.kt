@@ -63,7 +63,7 @@ class Application {
 
     private var mouseX = margin
     private var mouseY = margin
-    private var field = Array(gridVSize, { _ -> IntArray(gridHSize, { _ -> 0 }) })
+    private var field = GameField(gridVSize, gridHSize)
 
     private val topSpeed = 10
     private var speed = 0
@@ -169,10 +169,7 @@ class Application {
             return
         }
         println("stopLife")
-        if (animation != null) {
-            // double check for null
-            animation!!.cancel()
-        }
+        animation?.cancel()
     }
 
     /**
@@ -180,25 +177,22 @@ class Application {
      * Returns 'false' if nothing happened.
      */
     private fun trySetPlayState(state: PlayState): Boolean {
-        if (playState == state) {
-            return false
-        }
-        playState = state
+        playState = if (playState != state) state else return false
         updateButtonStates()
         return true
     }
 
     private fun updateButtonStates() {
-        when (playState) {
-            PlayState.PAUSE -> startStopButton.textContent = "Start"
-            PlayState.PLAY -> startStopButton.textContent = "Stop"
+        startStopButton.textContent = when (playState) {
+            PlayState.PAUSE -> "Start"
+            PlayState.PLAY -> "Stop"
         }
     }
 
     private fun clear() {
-        for (i in field.indices) {
-            for (j in field[i].indices) {
-                field[i][j] = 0
+        for (i in 0..field.hSize) {
+            for (j in 0..field.vSize) {
+                field[i, j] = 0
             }
         }
         redraw()
@@ -207,7 +201,7 @@ class Application {
     }
 
     private fun calcNextState() {
-        val newField = Array(gridVSize, { _ -> IntArray(gridHSize, { _ -> 0 }) })
+        val newField = GameField(gridVSize, gridHSize)
         for (y in vRange) {
             for (x in hRange) {
                 val cur = IntPoint(x, y)
@@ -221,7 +215,7 @@ class Application {
                         } else {
                             0
                         }
-                newField[y][x] = newState
+                newField[cur] = newState
             }
         }
 
@@ -229,7 +223,7 @@ class Application {
     }
 
     private fun currentState(p: IntPoint): Int {
-        return field[p.y][p.x]
+        return field[p]
     }
 
     private fun calcNeighbors(p: IntPoint): Int {
@@ -241,7 +235,7 @@ class Application {
                 if (x !in hRange || y !in vRange || (x == p.x && y == p.y)) {
                     continue
                 }
-                if (field[y][x] != 0) {
+                if (field[x, y] != 0) {
                     count++
                 }
             }
@@ -259,13 +253,13 @@ class Application {
     }
 
     private fun getStateOf(point: Point): Int {
-        val (intX, intY) = point.floorTo(cellSize)
-        return field[intY][intX]
+        val intPoint = point.floorTo(cellSize)
+        return field[intPoint]
     }
 
     private fun setStateOf(point: Point, newState: Int) {
-        val (intX, intY) = point.floorTo(cellSize)
-        field[intY][intX] = newState
+        val intPoint = point.floorTo(cellSize)
+        field[intPoint] = newState
     }
 
     private fun switchStateOf(point: Point) {
@@ -299,12 +293,12 @@ class Application {
     private fun redraw() {
         scene.clear()
         // draw field
-        for (i in field.indices) {
-            for (j in field[i].indices) {
-                if (field[i][j] != 0) {
+        for (x in 0..(field.vSize - 1)) {
+            for (y in 0..(field.hSize - 1)) {
+                if (field[x, y] != 0) {
                     val rect = scene.append.div("rect")
                     rect.setSize(cellSize, cellSize)
-                    rect.setPosition(j * cellSize, i * cellSize)
+                    rect.setPosition(x * cellSize, y * cellSize)
                 }
             }
         }
@@ -373,6 +367,30 @@ fun Point.floorTo(cellSize: Double): IntPoint {
     val newX = floor(x / cellSize).toInt()
     val newY = floor(y / cellSize).toInt()
     return IntPoint(newX, newY)
+}
+
+class GameField(val vSize: Int, val hSize: Int) {
+    private val internArray = Array(vSize, { _ -> IntArray(hSize, { _ -> 0 }) })
+
+    operator fun get(x: Int, y: Int): Int {
+        if ((x + 1) !in (1..hSize) || (y + 1) !in (1..vSize)) {
+            println("Out of bound request")
+            return 0
+        }
+        return internArray[y][x]
+    }
+
+    operator fun get(p: IntPoint): Int {
+        return this[p.x, p.y]
+    }
+
+    operator fun set(x: Int, y: Int, value: Int) {
+        internArray[y][x] = value
+    }
+
+    operator fun set(p: IntPoint, value: Int) {
+        this[p.x, p.y] = value
+    }
 }
 
 class AnimationTimer {
