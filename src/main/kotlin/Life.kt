@@ -174,7 +174,7 @@ class Application : CoroutineScope {
             return
         }
         println("stopLife")
-        animation?.cancel()
+        animation.cancel()
     }
 
     /**
