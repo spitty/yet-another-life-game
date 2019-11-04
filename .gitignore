@@ -8,4 +8,6 @@ target
 node_modules
 package-lock.json
 /web
+# OSX
+.DS_Store
 
