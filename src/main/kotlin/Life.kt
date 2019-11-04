@@ -1,6 +1,7 @@
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.awaitAnimationFrame
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitAnimationFrame
+import kotlinx.coroutines.launch
 import kotlinx.html.*
 import kotlinx.html.dom.append
 import kotlinx.html.js.*
@@ -10,6 +11,7 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 import kotlin.browser.document
 import kotlin.browser.window
+import kotlin.coroutines.CoroutineContext
 import kotlin.dom.clear
 import kotlin.math.floor
 import kotlin.math.round
@@ -45,7 +47,7 @@ enum class PlayState {
     PLAY, PAUSE
 }
 
-class Application {
+class Application : CoroutineScope {
     private val body get() = document.body!!
     private val scene get() = document.getElementById("scene") as HTMLElement
     private val startStopButton get() = document.getElementById("startStopButton") as HTMLButtonElement
@@ -67,8 +69,11 @@ class Application {
 
     private val topSpeed = 10
     private var speed = 0
-    private var animation: Job? = null
     private var playState: PlayState = PlayState.PAUSE
+
+    private var animation: Job = Job()
+    override val coroutineContext: CoroutineContext
+        get() = animation
 
     enum class DragState {
         OFF, FILL, CLEAR

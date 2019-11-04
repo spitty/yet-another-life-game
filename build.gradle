@@ -16,12 +16,7 @@ repositories {
     maven { url "https://dl.bintray.com/devexperts/Maven/" }
 }
 
-kotlin.experimental.coroutines "enable"
-
 buildscript {
-    ext.kotlin_version = '1.2.10'
-    ext.html_version = '0.6.8'
-    ext.coroutines_version = '0.21'
     repositories {
         mavenCentral()
         jcenter()
