@@ -1,5 +1,22 @@
-group 'org.example'
+group 'org.maxlog.example.kotlin.life-game'
 version '1.0-SNAPSHOT'
+
+apply plugin: 'kotlin-platform-js'
+apply plugin: 'kotlin-dce-js'
+apply plugin: 'com.moowork.node'
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+    compile "org.jetbrains.kotlinx:kotlinx-html-js:$html_version"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
+}
+repositories {
+    jcenter()
+    maven { url "http://kotlin.bintray.com/kotlinx" }
+    maven { url "https://dl.bintray.com/devexperts/Maven/" }
+}
+
+kotlin.experimental.coroutines "enable"
 
 buildscript {
     ext.kotlin_version = '1.2.10'
@@ -8,59 +25,25 @@ buildscript {
     repositories {
         mavenCentral()
         jcenter()
-        // maven { url "http://kotlin.bintray.com/kotlinx" }
-        // maven { url "http://kotlin.bintray.com/kotlin-dev" }
-
+        maven { url "http://kotlin.bintray.com/kotlinx" }
+        maven { url "http://kotlin.bintray.com/kotlin-dev" }
+        maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintray_version"
+        classpath "com.moowork.gradle:gradle-node-plugin:$gradle_node_version"
     }
 }
-
-apply plugin: 'kotlin2js'
-kotlin.experimental.coroutines "enable"
-
-repositories {
-    jcenter()
-}
-
-dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
-    compile "org.jetbrains.kotlinx:kotlinx-html-js:$html_version"
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
-}
-
-task copyWebFiles(type: Copy) {
-    from 'src/main/web'
-    into 'web'
-}
-
-// Taken from tutorial for Kotlin http://kotlinlang.org/docs/tutorials/javascript/getting-started-gradle/getting-started-with-gradle.html
-task assembleWeb(type: Sync) {
-    configurations.compile.each { File file ->
-        from(zipTree(file.absolutePath), {
-            includeEmptyDirs = false
-            include { fileTreeElement ->
-                def path = fileTreeElement.path
-                path.endsWith(".js") && (path.startsWith("META-INF/resources/") || 
-                    !path.startsWith("META-INF/"))
-            }
-        })
-    }
-    from compileKotlin2Js.destinationDir
-    into "${projectDir}/web/js/lib"
-
-    dependsOn classes
-}
-
-assemble.dependsOn assembleWeb
-assemble.dependsOn copyWebFiles
 
 compileKotlin2Js {
     kotlinOptions {
-        outputFile = "${projectDir}/web/js/life.js"
+        main = "call"
+        moduleKind = "umd"
         sourceMap = true
-        sourceMapEmbedSources = "always"
+        metaInfo = true
+//        outputFile = "${projectDir}/web/js/life.js"
+//        sourceMapEmbedSources = "always"
     }
 }
 
@@ -70,3 +53,22 @@ task cleanWeb(type: Delete) {
 }
 
 clean.dependsOn cleanWeb
+
+
+node {
+    version = "$node_version"
+    npmVersion = "$npm_version"
+    download = true
+}
+
+task bundle(type: NpmTask, dependsOn: [npmInstall, runDceKotlinJs]) {
+    args = ["run", "bundle"]
+}
+
+task start(type: NpmTask, dependsOn: bundle) {
+    args = ["run", "start"]
+}
+
+apply plugin: 'base'
+
+clean.dependsOn gradle.includedBuilds.collect { it.task(':clean') }

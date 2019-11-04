@@ -9,3 +9,12 @@ The aim was to create Kotlin application compiled to JavaScript.
 Inpired by [this tweet](https://twitter.com/relizarov/status/946406735874584581) 
 about using kotlin coroutines for JavaScript
 which leads to [this example](https://kotlin.github.io/kotlinx.coroutines/example-frontend-js/index.html).
+
+## How to build
+`./gradlew clean bundle`
+
+It complies all required js and bundle them here:
+```
+$ ls build/dist/
+index.html     main.bundle.js
+```
