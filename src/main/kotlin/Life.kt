@@ -316,7 +316,6 @@ class Application {
         if (event !is MouseEvent) {
             return
         }
-        println("Hi, (${event.pageX}, ${event.pageY})")
 
         val point = eventToCoords(event)
         setMouseCoords(point)
