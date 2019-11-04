@@ -5,6 +5,7 @@ const path = require("path");
 const dist = path.resolve(__dirname, "build/dist");
 
 module.exports = {
+    mode: "development",
     entry: {
         main: "main"
     },
@@ -36,7 +37,9 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             title: 'Yet Another Game of Life (Kotlin JS Example)'
-        }),
-        new webpack.optimize.UglifyJsPlugin()
-    ]
+        })
+    ],
+    optimization: {
+        minimize: true
+    }
 };
