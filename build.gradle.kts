@@ -1,38 +1,44 @@
+import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
+import java.util.Arrays.asList
+
 group = "org.maxlog.example.kotlin.life-game"
 version = "1.0-SNAPSHOT"
 
-apply plugin: "base"
-apply plugin: "kotlin-platform-js"
-apply plugin: "kotlin-dce-js"
-apply plugin: "com.github.node-gradle.node"
+plugins {
+    val kotlinVersion = "1.3.71"
+    id("base")
+    id("kotlin2js") version (kotlinVersion)
+    id("com.github.node-gradle.node") version "2.2.3"
+}
+
+val kotlinVersion = "1.3.71"
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-html-js:$html_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version")
+    implementation(kotlin("stdlib-js", kotlinVersion))
+    implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.6.8")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.3.2")
 }
 repositories {
     jcenter()
-    maven { url = "https://kotlin.bintray.com/kotlinx" }
-    maven { url = "https://dl.bintray.com/devexperts/Maven/" }
+    maven { url = uri("https://kotlin.bintray.com/kotlinx") }
+    maven { url = uri("https://dl.bintray.com/devexperts/Maven/") }
 }
 
 buildscript {
     repositories {
         mavenCentral()
         jcenter()
-        maven { url = "https://kotlin.bintray.com/kotlinx" }
-        maven { url = "https://kotlin.bintray.com/kotlin-dev" }
-        maven { url = "https://plugins.gradle.org/m2/" }
-    }
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
-        classpath("com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintray_version")
-        classpath("com.github.node-gradle:gradle-node-plugin:$gradle_node_version")
+        maven {
+            url = uri("https://kotlin.bintray.com/kotlinx")
+        }
+        maven {
+            url = uri("https://kotlin.bintray.com/kotlin-dev")
+        }
     }
 }
+//kotlin.target.browser { }
 
-compileKotlin2Js {
+tasks.withType<Kotlin2JsCompile> {
     kotlinOptions {
         main = "call"
         moduleKind = "umd"
@@ -43,26 +49,43 @@ compileKotlin2Js {
     }
 }
 
-task cleanWeb(type: Delete) {
-  delete("web")
-  followSymlinks = true
+tasks.register<Delete>("cleanWeb") {
+    delete("web")
+    isFollowSymlinks = true
 }
 
-clean.dependsOn cleanWeb
-
-
-node {
-    version = "$node_version"
-    npmVersion = "$npm_version"
-    download = true
+tasks.clean {
+    dependsOn("cleanWeb")
 }
 
-task bundle(type: NpmTask, dependsOn: [npmInstall, runDceKotlinJs]) {
-    args = ["run", "bundle"]
+tasks.register<com.moowork.gradle.node.npm.NpmTask>("bundle") {
+    setArgs(asList("run", "bundle"))
+    // todo: make DCE
+    dependsOn("npmInstall", "assembleJsLib")
 }
 
-task start(type: NpmTask, dependsOn: bundle) {
-    args = ["run", "start"]
+tasks.register<com.moowork.gradle.node.npm.NpmTask>("start") {
+    setArgs(asList("run", "start"))
+    dependsOn("bundle")
 }
 
-clean.dependsOn(gradle.includedBuilds.collect { it.task(":clean") })
+tasks.register<com.moowork.gradle.node.task.NodeTask>("node") {
+    version = "8.9.3"
+}
+
+task<Copy>("assembleJsLib") {
+    configurations.runtimeClasspath.get().resolve().forEach { file: File ->
+        from(zipTree(file.absolutePath)) {
+            includeEmptyDirs = false
+            include { fileTreeElement ->
+                val path = fileTreeElement.path
+                (path.endsWith(".js") || path.endsWith(".js.map")) && (path.startsWith("META-INF/resources/") ||
+                        !path.startsWith("META-INF/"))
+            }
+        }
+    }
+    from(tasks.withType<ProcessResources>().map { it.destinationDir })
+    into("$buildDir/js")
+
+    dependsOn("classes")
+}
