@@ -3,7 +3,7 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'kotlin-platform-js'
 apply plugin: 'kotlin-dce-js'
-apply plugin: 'com.moowork.node'
+apply plugin: 'com.github.node-gradle.node'
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
@@ -27,7 +27,7 @@ buildscript {
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintray_version"
-        classpath "com.moowork.gradle:gradle-node-plugin:$gradle_node_version"
+        classpath "com.github.node-gradle:gradle-node-plugin:$gradle_node_version"
     }
 }
 
