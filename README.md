@@ -26,3 +26,4 @@ index.html     main.bundle.js
 - https://github.com/Kotlin/kotlin-examples/tree/master/gradle/js-dce
 - https://github.com/Kotlin/kotlin-full-stack-application-demo
 - https://github.com/barlog-m/kotlin-js-webpack-example (on webpack)
+- [Kotlin/JS Gradle Plugin announced as part of Kotlin 1.3.70](https://blog.jetbrains.com/kotlin/2020/03/kotlin-1-3-70-released/#kotlin-js)
