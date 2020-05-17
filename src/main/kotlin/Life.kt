@@ -2,8 +2,7 @@ import kotlinx.coroutines.*
 import kotlinx.html.*
 import kotlinx.html.dom.append
 import kotlinx.html.js.*
-import org.w3c.dom.HTMLButtonElement
-import org.w3c.dom.HTMLElement
+import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 import kotlin.browser.document
@@ -43,6 +42,7 @@ enum class PlayState {
 class Application : CoroutineScope {
     private val body get() = document.body!!
     private val scene get() = document.getElementById("scene") as HTMLElement
+    private val canvas get() = document.getElementById("canvas") as HTMLCanvasElement
     private val startStopButton get() = document.getElementById("startStopButton") as HTMLButtonElement
     private val speedometer get() = document.getElementById("speedometer") as HTMLElement
 
@@ -52,6 +52,7 @@ class Application : CoroutineScope {
     private val hRange = 0 until gridHSize
     private val cellSize = 15.0
     private val margin = cellSize / 2
+    private val borderShift = 1.0
 
     private val sw = cellSize * gridHSize
     private val sh = cellSize * gridVSize
@@ -63,6 +64,7 @@ class Application : CoroutineScope {
     private val topSpeed = 10
     private var speed = 0
     private var playState: PlayState = PlayState.PAUSE
+    private var useCanvasRenderer = true
 
     private var animation: Job = Job()
     override val coroutineContext: CoroutineContext = Dispatchers.Default
@@ -103,19 +105,45 @@ class Application : CoroutineScope {
                     +"+"
                     onClickFunction = { speedUp() }
                 }
+                br
+                +"Use canvas renderer"
+                input(type = InputType.checkBox) {
+                    checked = true
+                    onInputFunction = { event -> updateRenderer(event) }
+                }
             }
             div {
                 id = "scene"
-                onMouseMoveFunction = { event -> updateCoords(event) }
-                onMouseDownFunction = { event -> startDrag(event) }
+                hidden = true
+                onMouseMoveFunction = { event -> updateCoords(scene, event) }
+                onMouseDownFunction = { event -> startDrag(scene, event) }
                 // todo: currently "mouseOut" occurs on moving to div "aim"
 //                onMouseOutFunction = { event -> stopDrag(event) }
+                onMouseUpFunction = { event -> stopDrag(event) }
+            }
+            canvas {
+                id = "canvas"
+                width = (sw + borderShift * 2).toString()
+                height = (sh + borderShift * 2).toString()
+                onMouseMoveFunction = { event -> updateCoords(canvas, event) }
+                onMouseDownFunction = { event -> startDrag(canvas, event) }
+                onMouseOutFunction = { event -> mouseOutHandler(event) }
                 onMouseUpFunction = { event -> stopDrag(event) }
             }
         }
         scene.setSize(sw, sh)
         updateSpeed(5)
         redraw()
+    }
+
+    private fun updateRenderer(event: Event) {
+        val target = event.target
+        if (target !is HTMLInputElement) {
+            return
+        }
+        useCanvasRenderer = target.checked
+        scene.hidden = useCanvasRenderer
+        canvas.hidden = !useCanvasRenderer
     }
 
     private fun updateSpeed(newSpeed: Int) {
@@ -240,11 +268,11 @@ class Application : CoroutineScope {
         return count
     }
 
-    private fun switchCellState(event: Event) {
+    private fun switchCellState(target: HTMLElement, event: Event) {
         if (event !is MouseEvent) {
             return
         }
-        val mousePoint = eventToCoords(event)
+        val mousePoint = eventToCoords(target, event)
         switchStateOf(mousePoint)
         redraw()
     }
@@ -264,11 +292,11 @@ class Application : CoroutineScope {
         setStateOf(point, newState)
     }
 
-    private fun startDrag(event: Event) {
+    private fun startDrag(target: HTMLElement, event: Event) {
         if (event !is MouseEvent || dragState != DragState.OFF) {
             return
         }
-        val point = eventToCoords(event)
+        val point = eventToCoords(target, event)
         val filler = getStateOf(point).switch
         dragState = if (filler == 1) {
             DragState.FILL
@@ -276,7 +304,13 @@ class Application : CoroutineScope {
             DragState.CLEAR
         }
         println("startDrag($dragState)")
-        switchCellState(event)
+        switchCellState(target, event)
+    }
+
+    private fun mouseOutHandler(event: Event) {
+        mouseX = -cellSize
+        mouseY = -cellSize
+        stopDrag(event)
     }
 
     private fun stopDrag(event: Event) {
@@ -300,21 +334,47 @@ class Application : CoroutineScope {
             }
         }
         val aim = scene.append.div("aim")
-        aim.setSize(cellSize - 1, cellSize - 1)
-        // x, y define top left corner. Make corrections
-        val realWidth = aim.offsetWidth
-        val realHeight = aim.offsetHeight
-        val newX = mouseX - realWidth / 2
-        val newY = mouseY - realHeight / 2
+        aim.setSize(cellSize - borderShift, cellSize - borderShift)
+        val newX = mouseX - cellSize / 2 - borderShift * 3 / 2
+        val newY = mouseY - cellSize / 2 - borderShift * 3 / 2
         aim.setPosition(newX, newY)
+        redrawCanvas()
     }
 
-    private fun updateCoords(event: Event) {
+    private fun redrawCanvas() {
+        val context = canvas.getContext("2d")
+        check(context is CanvasRenderingContext2D)
+        context.clearRect(0.0, 0.0, sw + borderShift * 2, sh + borderShift * 2)
+
+        context.strokeStyle = "black"
+        context.setLineDash(arrayOf(1.0, 0.0))
+        context.strokeRect(borderShift / 2, borderShift / 2, sw + borderShift, sh + borderShift)
+
+        context.fillStyle = "red"
+        for (x in 0 until field.vSize) {
+            for (y in 0 until field.hSize) {
+                if (field[x, y] != 0) {
+                    val xAbs = x * cellSize + borderShift
+                    val yAbs = y * cellSize + borderShift
+                    context.fillRect(xAbs, yAbs, cellSize, cellSize)
+                }
+            }
+        }
+        context.strokeStyle = "black"
+        context.setLineDash(arrayOf(3.0, 1.0))
+        context.strokeRect(
+                mouseX - cellSize / 2,
+                mouseY - cellSize / 2,
+                cellSize,
+                cellSize)
+    }
+
+    private fun updateCoords(target: HTMLElement, event: Event) {
         if (event !is MouseEvent) {
             return
         }
 
-        val point = eventToCoords(event)
+        val point = eventToCoords(target, event)
         setMouseCoords(point)
         val newStateOfCell =
                 when (dragState) {
@@ -337,20 +397,20 @@ class Application : CoroutineScope {
     /**
      * Translate MouseEvent coordinates to coordinates related to 'scene'
      */
-    private fun eventToCoords(event: MouseEvent): Point {
+    private fun eventToCoords(target: HTMLElement, event: MouseEvent): Point {
         val xRange = (0.0 + margin)..(sw - margin)
         val yRange = (0.0 + margin)..(sh - margin)
-        var newX = event.pageX - scene.offsetLeft
+        var newX = event.pageX - target.offsetLeft
         if (newX !in xRange) {
             newX = newX.coerceIn(xRange)
         }
-        var newY = event.pageY - scene.offsetTop
+        var newY = event.pageY - target.offsetTop
         if (newY !in yRange) {
             newY = newY.coerceIn(yRange)
         }
 
-        newX = round((newX - margin) / cellSize) * cellSize + margin
-        newY = round((newY - margin) / cellSize) * cellSize + margin
+        newX = round((newX - margin + borderShift) / cellSize) * cellSize + margin + borderShift
+        newY = round((newY - margin + borderShift) / cellSize) * cellSize + margin + borderShift
 
         return Point(newX, newY)
     }

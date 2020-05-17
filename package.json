@@ -13,7 +13,7 @@
   },
   "scripts": {
     "bundle": "webpack",
-    "start": "webpack-dev-server --open --no-inline"
+    "start": "webpack-dev-server --watch --open --no-inline"
   },
   "repository": {
     "type": "git",
