@@ -17,10 +17,6 @@ import kotlin.math.floor
 import kotlin.math.round
 
 fun main() {
-    println("Hello JavaScript!")
-    for (a in 1..5)
-        println("var a=${a}")
-
     document.addEventListener("DOMContentLoaded", {
         Application().start()
     })
