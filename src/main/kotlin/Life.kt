@@ -187,8 +187,8 @@ class Application : CoroutineScope {
     }
 
     private fun clear() {
-        for (i in 0..field.hSize) {
-            for (j in 0..field.vSize) {
+        for (i in 0 until field.hSize) {
+            for (j in 0 until field.vSize) {
                 field[i, j] = 0
             }
         }
