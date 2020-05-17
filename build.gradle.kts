@@ -5,18 +5,20 @@ group = "org.maxlog.example.kotlin.life-game"
 version = "1.0-SNAPSHOT"
 
 plugins {
-    val kotlinVersion = "1.3.71"
     id("base")
-    id("kotlin2js") version (kotlinVersion)
+    id("kotlin2js") version ("1.3.71")
     id("com.github.node-gradle.node") version "2.2.3"
 }
 
-val kotlinVersion = "1.3.71"
+val kotlinVersion: String by project
+val coroutinesVersion: String by project
+val htmlVersion: String by project
+val nodeVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib-js", kotlinVersion))
-    implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.6.8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.3.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-html-js:$htmlVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
 }
 repositories {
     jcenter()
@@ -70,7 +72,7 @@ tasks.register<com.moowork.gradle.node.npm.NpmTask>("start") {
 }
 
 tasks.register<com.moowork.gradle.node.task.NodeTask>("node") {
-    version = "8.9.3"
+    version = nodeVersion
 }
 
 task<Copy>("assembleJsLib") {
