@@ -30,8 +30,7 @@ module.exports = {
     },
     resolve: {
         modules: [
-            path.resolve(__dirname, "build/classes/kotlin/main/"),
-            path.resolve(__dirname, "build/js/"),
+            path.resolve(__dirname, "build/distributions/"),
             path.resolve(__dirname, "src/main/web/")
         ]
     },
