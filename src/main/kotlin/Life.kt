@@ -304,7 +304,7 @@ class Application : CoroutineScope {
             }
         }
         val aim = scene.append.div("aim")
-        aim.setSize(cellSize, cellSize)
+        aim.setSize(cellSize - 1, cellSize - 1)
         // x, y define top left corner. Make corrections
         val realWidth = aim.offsetWidth
         val realHeight = aim.offsetHeight
