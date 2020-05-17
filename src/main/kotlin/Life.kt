@@ -1,7 +1,4 @@
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.awaitAnimationFrame
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.html.*
 import kotlinx.html.dom.append
 import kotlinx.html.js.*
@@ -68,8 +65,7 @@ class Application : CoroutineScope {
     private var playState: PlayState = PlayState.PAUSE
 
     private var animation: Job = Job()
-    override val coroutineContext: CoroutineContext
-        get() = animation
+    override val coroutineContext: CoroutineContext = Dispatchers.Default
 
     enum class DragState {
         OFF, FILL, CLEAR
