@@ -16,7 +16,7 @@ import kotlin.dom.clear
 import kotlin.math.floor
 import kotlin.math.round
 
-fun main(args: Array<String>) {
+fun main() {
     println("Hello JavaScript!")
     for (a in 1..5)
         println("var a=${a}")
@@ -55,8 +55,8 @@ class Application : CoroutineScope {
 
     private val gridVSize = 40
     private val gridHSize = 40
-    private val vRange = 0..(gridVSize - 1)
-    private val hRange = 0..(gridHSize - 1)
+    private val vRange = 0 until gridVSize
+    private val hRange = 0 until gridHSize
     private val cellSize = 15.0
     private val margin = cellSize / 2
 
@@ -298,8 +298,8 @@ class Application : CoroutineScope {
     private fun redraw() {
         scene.clear()
         // draw field
-        for (x in 0..(field.vSize - 1)) {
-            for (y in 0..(field.hSize - 1)) {
+        for (x in 0 until field.vSize) {
+            for (y in 0 until field.hSize) {
                 if (field[x, y] != 0) {
                     val rect = scene.append.div("rect")
                     rect.setSize(cellSize, cellSize)
@@ -374,7 +374,7 @@ fun Point.floorTo(cellSize: Double): IntPoint {
 }
 
 class GameField(val vSize: Int, val hSize: Int) {
-    private val internArray = Array(vSize, { _ -> IntArray(hSize, { _ -> 0 }) })
+    private val internArray = Array(vSize) { IntArray(hSize) { 0 } }
 
     operator fun get(x: Int, y: Int): Int {
         if ((x + 1) !in (1..hSize) || (y + 1) !in (1..vSize)) {
