@@ -1,6 +1,6 @@
 # Yet Another Game of Life
 
-[Living demo](http://life.spitty.ru/).
+[Living demo](https://game-of-life.maxlog.dev/).
 
 This repository contains implementation of [Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
 
